@@ -1,0 +1,18 @@
+# Directories
+.venv/
+__pycache__/
+
+# Python cache files
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
