@@ -1,6 +1,7 @@
 import networkx as nx
 import numpy as np
 import os
+import csv
 from typing import Dict, Tuple, List
 
 def precompute_shortest_paths(graph: nx.Graph, beta: float) -> Tuple[Dict, Dict, Dict]:
@@ -99,30 +100,62 @@ def create_greedy_permutation(num_cities: int, distances: dict) -> list:
     return path
 
 def save_solution_to_file(path, problem_params, fitness, baseline, filename=None, output_dir=None):
+    """
+    Save solution results to CSV file.
     
+    Args:
+        path: Solution path (list of cities).
+        problem_params: Dictionary containing problem parameters.
+        fitness: Final GA cost.
+        baseline: Baseline cost.
+        filename: Optional filename (defaults to 'results.csv').
+        output_dir: Optional output directory.
+    
+    Returns:
+        Full path to the saved file.
+    """
     if filename is None:
-        filename = f"solution_{problem_params['num_cities']}cities.txt"
+        filename = "results.csv"
     
     if output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
         filename = os.path.join(output_dir, filename)
     
+    # Calculate improvement percentage
     if baseline > 0:
         improvement = (baseline - fitness) / baseline * 100
     else:
         improvement = 0.0
-
-    with open(filename, 'w') as f:
-        f.write("=" * 60 + "\n")
-        f.write("THIEF AND GOLD - SOLUTION\n")
-        f.write("=" * 60 + "\n")
-        f.write(f"Params: {problem_params}\n")
-        f.write(f"Baseline Cost: {baseline:.2f}\n")
-        f.write(f"Solution Cost: {fitness:.2f}\n")
-        f.write(f"Improvement: {improvement:.2f}%\n")
-        f.write(f"Path Steps: {len(path)}\n")
-        f.write("-" * 60 + "\n")
-        f.write(f"RAW PATH: {path}\n")
+    
+    # Extract parameters
+    problem_size = problem_params.get('num_cities', 'N/A')
+    density = problem_params.get('density', 'N/A')
+    alpha = problem_params.get('alpha', 'N/A')
+    beta = problem_params.get('beta', 'N/A')
+    
+    # Check if file exists to determine if we need to write headers
+    file_exists = os.path.isfile(filename)
+    
+    with open(filename, 'a', newline='') as f:
+        fieldnames = ['Problem_size', 'Density', 'Alpha', 'Beta', 'Baseline', 'GA_cost', 'Improvement_%', 'Path']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        
+        # Write header only if file is new
+        if not file_exists:
+            writer.writeheader()
+        
+        # Write data row
+        writer.writerow({
+            'Problem_size': problem_size,
+            'Density': density,
+            'Alpha': alpha,
+            'Beta': beta,
+            'Baseline': f"{baseline:.2f}",
+            'GA_cost': f"{fitness:.2f}",
+            'Improvement_%': f"{improvement:.2f}",
+            'Path': str(path)
+        })
+    
     return filename
 
 def compute_exact_travel_cost(
