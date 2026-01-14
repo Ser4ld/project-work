@@ -3,10 +3,6 @@ import numpy as np
 import os
 from typing import Dict, Tuple, List
 
-# =============================================================================
-# DATA STRUCTURES & PRECOMPUTATION
-# =============================================================================
-
 def precompute_shortest_paths(graph: nx.Graph, beta: float) -> Tuple[Dict, Dict, Dict]:
     """
     Precompute shortest paths and specific metrics for exact cost calculation.
@@ -129,10 +125,6 @@ def save_solution_to_file(path, problem_params, fitness, baseline, filename=None
         f.write(f"RAW PATH: {path}\n")
     return filename
 
-# =============================================================================
-# EXACT COST CALCULATION
-# =============================================================================
-
 def compute_exact_travel_cost(
     u: int, 
     v: int, 
@@ -153,11 +145,6 @@ def compute_exact_travel_cost(
     beta_sum_total = beta_sums[u][v]
     penalty_factor = (alpha * weight) ** beta
     return dist_total + penalty_factor * beta_sum_total
-
-
-# =============================================================================
-# EVALUATION ENGINES
-# =============================================================================
 
 def _evaluate_greedy(genome, graph, distances, beta_sums, alpha, beta):
     total_cost = 0.0
