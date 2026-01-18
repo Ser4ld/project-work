@@ -3,6 +3,7 @@ import numpy as np
 import os
 import csv
 from typing import Dict, Tuple, List
+import matplotlib.pyplot as plt
 
 def precompute_shortest_paths(graph: nx.Graph, beta: float) -> Tuple[Dict, Dict, Dict]:
     """
@@ -333,3 +334,24 @@ def evaluate_route(genome: list, graph: nx.Graph, distances: Dict, beta_sums: Di
         return _evaluate_split(genome, graph, distances, beta_sums, alpha, beta)
     else:
         return _evaluate_greedy(genome, graph, distances, beta_sums, alpha, beta)
+    
+def plot_evolution(history, problem_params, save_path=None):
+    """Plot fitness evolution over generations"""
+    plt.figure(figsize=(10, 6))
+    
+    generations = range(len(history['best_history']))
+    plt.plot(generations, history['best_history'], 'b-', label='Best Fitness', linewidth=2)
+    plt.plot(generations, history['avg_history'], 'g--', label='Average Fitness', linewidth=1.5, alpha=0.7)
+    
+    plt.xlabel('Generation', fontsize=12)
+    plt.ylabel('Fitness (Cost)', fontsize=12)
+    plt.title(f"GA Evolution (N={problem_params['num_cities']}, α={problem_params['alpha']}, β={problem_params['beta']})", fontsize=14)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()

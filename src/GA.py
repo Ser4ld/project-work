@@ -1,12 +1,10 @@
-"""
-Genetic Algorithm for the Thief and Gold problem.
-"""
-
 import numpy as np
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 from copy import deepcopy
 from tqdm import tqdm
+import concurrent.futures
+import functools
 
 from .utils import (
     precompute_shortest_paths,
@@ -32,7 +30,7 @@ class GAConfig:
     tournament_size: int = 5
     seed: int = 42
     verbose: bool = True
-    update_interval: int = 50
+    update_interval: int = 10
     stagnation_threshold: int = 50
     restart_threshold: int = 150
     local_search_iterations: int = 50 # Ridotto leggermente
@@ -52,10 +50,33 @@ class GeneticAlgorithm:
         self.best_route = None
         self.best_fitness = float('inf')
         self.best_path = None
-        self.fitness_history = []
+
+        self.best_fitness_history = []
+        self.avg_fitness_history = []
     
     def _evaluate(self, route: list) -> Tuple[float, list]:
         return evaluate_route(route, self.graph, self.distances, self.beta_sums, self.alpha, self.beta)
+    
+    def _evaluate_population_parallel(self, population: List[list], executor) -> Tuple[List[float], List[list]]:
+        """Valuta la popolazione usando tutti i core disponibili."""
+        # Creiamo una versione fissa della funzione evaluate che ha già grafo e matrici
+        # così ai worker passiamo solo la rotta variabile
+        eval_func = functools.partial(
+            evaluate_route,
+            graph=self.graph,
+            distances=self.distances,
+            beta_sums=self.beta_sums,
+            alpha=self.alpha,
+            beta=self.beta
+        )
+        
+        # Mappiamo la funzione su tutta la popolazione in parallelo
+        results = list(executor.map(eval_func, population))
+        
+        # Separiamo i risultati
+        fitness_values = [r[0] for r in results]
+        detailed_paths = [r[1] for r in results]
+        return fitness_values, detailed_paths
     
     def _create_initial_population(self) -> List[list]:
         population = []
@@ -149,6 +170,9 @@ class GeneticAlgorithm:
             
             population = new_population
             fitness_values, detailed_paths = self._evaluate_population(population)
+
+            self.best_fitness_history.append(float(np.min(fitness_values)))
+            self.avg_fitness_history.append(float(np.mean(fitness_values)))
             
             best_idx = int(np.argmin(fitness_values))
             if fitness_values[best_idx] < self.best_fitness:
@@ -168,7 +192,7 @@ class GeneticAlgorithm:
                 num_keep = self.config.elite_size
                 new_pop = [deepcopy(population[sorted_idx[i]]) for i in range(num_keep)]
                 while len(new_pop) < self.config.population_size:
-                     new_pop.append(create_random_route(self.num_cities, self.rng))
+                    new_pop.append(create_random_route(self.num_cities, self.rng))
                 population = new_pop
                 fitness_values, detailed_paths = self._evaluate_population(population)
                 stagnation = 0
@@ -178,8 +202,13 @@ class GeneticAlgorithm:
         # Final Polish
         self.best_route = self._local_search(self.best_route)
         self.best_fitness, self.best_path = self._evaluate(self.best_route)
+
+        history = {
+            'best_history': self.best_fitness_history,
+            'avg_history': self.avg_fitness_history
+        }
         
-        return self.best_path, self.best_fitness
+        return self.best_path, self.best_fitness, history
 
 def solve(problem, config: GAConfig = None, verbose: bool = True) -> List[Tuple[int, float]]:
     # Configurazione automatica
@@ -191,7 +220,7 @@ def solve(problem, config: GAConfig = None, verbose: bool = True) -> List[Tuple[
             )
         else:
             config = GAConfig(
-                population_size=200, generations=3000, verbose=verbose
+                population_size=100, generations=500, verbose=verbose
             )
     
     ga = GeneticAlgorithm(problem.graph, problem.alpha, problem.beta, config)
