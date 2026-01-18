@@ -1,6 +1,6 @@
 from Problem import Problem
 from src import solve, GAConfig
-from src.utils import save_solution_to_file
+from src.utils import plot_evolution, save_solution_to_file
 
 
 def solution(p: Problem):
@@ -13,27 +13,27 @@ def solution(p: Problem):
     Returns:
         Path as [(city, gold), ..., (0, 0)].
     """
-    path, fitness = solve(p, verbose=True)
-    return path, fitness
+    path, fitness, history = solve(p, verbose=True)
+    return path, fitness, history
 
 
 if __name__ == "__main__":
     
     # Test configurations (num_cities, density, alpha, beta)
     test_problems = [
-        (100, 0.2, 1, 1),
-        (100, 0.2, 2, 1),
-        (100, 0.2, 1, 2),
-        (100, 1, 1, 1),
-        (100, 1, 2, 1),
-        (100, 1, 1, 2),
+        #(100, 0.2, 1, 1),
+        #(100, 0.2, 2, 1),
+        #(100, 0.2, 1, 2),
+        #(100, 1, 1, 1),
+        #(100, 1, 2, 1),
+        #(100, 1, 1, 2),
         # Uncomment for large problems
-        # (1000, 0.2, 1, 1),
-        # (1000, 0.2, 2, 1),
-        # (1000, 0.2, 1, 2),
-        # (1000, 1, 1, 1),
-        # (1000, 1, 2, 1),
-        # (1000, 1, 1, 2),
+        #(1000, 0.2, 1, 1),
+        (1000, 0.2, 2, 1),
+        (1000, 0.2, 1, 2),
+        (1000, 1, 1, 1),
+        (1000, 1, 2, 1),
+        (1000, 1, 1, 2),
     ]
     
     print("=" * 60)
@@ -51,7 +51,7 @@ if __name__ == "__main__":
         baseline = p.baseline()
         print(f"Baseline: {baseline:.2f}")
         
-        path, fitness = solution(p)
+        path, fitness, history = solution(p)
         
         # Validate
         cities_visited = {c for c, g in path if c != 0}
@@ -71,7 +71,11 @@ if __name__ == "__main__":
             'beta': beta
         }
         filename = save_solution_to_file(path, problem_params, fitness, baseline)
-        print(f"📄 Solution saved to: {filename}")
+        print(f"Solution saved to: {filename}")
+
+        plot_filename = f"p_{num_cities}_{density}_{alpha}_{beta}_evolution.png"
+        plot_evolution(history, problem_params, save_path=plot_filename)
+        print(f"📊 Evolution plot saved to: {plot_filename}")
         
         results.append({
             'cities': num_cities,
