@@ -36,7 +36,7 @@ def solution(p: Problem):
     # Generate and save evolution plot
     plot_filename = f"p_{problem_params['num_cities']}_{problem_params['density']}_{p.alpha}_{p.beta}_evolution.png"
     plot_evolution(history, problem_params, save_path=f"{plot_dir}/{plot_filename}")
-    print(f"📊 Evolution plot saved to: {plot_dir}/{plot_filename}")
+    print(f"Evolution plot saved to: {plot_dir}/{plot_filename}")
     
     return path
 
@@ -45,17 +45,17 @@ if __name__ == "__main__":
     # Test configurations (num_cities, density, alpha, beta)
     test_problems = [
         (100, 0.2, 1, 1),
-        #(100, 0.2, 2, 1),
-        #(100, 0.2, 1, 2),
-        #(100, 1, 1, 1),
-        #(100, 1, 2, 1),
-        #(100, 1, 1, 2),
-        #(1000, 0.2, 1, 1),
-        #(1000, 0.2, 2, 1),
-        #(1000, 0.2, 1, 2),
-        #(1000, 1, 1, 1),
-        #(1000, 1, 2, 1),
-        #(1000, 1, 1, 2),
+        (100, 0.2, 2, 1),
+        (100, 0.2, 1, 2),
+        (100, 1, 1, 1),
+        (100, 1, 2, 1),
+        (100, 1, 1, 2),
+        (1000, 0.2, 1, 1),
+        (1000, 0.2, 2, 1),
+        (1000, 0.2, 1, 2),
+        (1000, 1, 1, 1),
+        (1000, 1, 2, 1),
+        (1000, 1, 1, 2),
     ]
     
     print("=" * 60)
