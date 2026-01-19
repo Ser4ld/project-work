@@ -100,65 +100,6 @@ def create_greedy_permutation(num_cities: int, distances: dict) -> list:
         
     return path
 
-def save_solution_to_file(path, problem_params, fitness, baseline, filename=None, output_dir=None):
-    """
-    Save solution results to CSV file.
-    
-    Args:
-        path: Solution path (list of cities).
-        problem_params: Dictionary containing problem parameters.
-        fitness: Final GA cost.
-        baseline: Baseline cost.
-        filename: Optional filename (defaults to 'results.csv').
-        output_dir: Optional output directory.
-    
-    Returns:
-        Full path to the saved file.
-    """
-    if filename is None:
-        filename = "results.csv"
-    
-    if output_dir is not None:
-        os.makedirs(output_dir, exist_ok=True)
-        filename = os.path.join(output_dir, filename)
-    
-    # Calculate improvement percentage
-    if baseline > 0:
-        improvement = (baseline - fitness) / baseline * 100
-    else:
-        improvement = 0.0
-    
-    # Extract parameters
-    problem_size = problem_params.get('num_cities', 'N/A')
-    density = problem_params.get('density', 'N/A')
-    alpha = problem_params.get('alpha', 'N/A')
-    beta = problem_params.get('beta', 'N/A')
-    
-    # Check if file exists to determine if we need to write headers
-    file_exists = os.path.isfile(filename)
-    
-    with open(filename, 'a', newline='') as f:
-        fieldnames = ['Problem_size', 'Density', 'Alpha', 'Beta', 'Baseline', 'GA_cost', 'Improvement_%', 'Path']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        
-        # Write header only if file is new
-        if not file_exists:
-            writer.writeheader()
-        
-        # Write data row
-        writer.writerow({
-            'Problem_size': problem_size,
-            'Density': density,
-            'Alpha': alpha,
-            'Beta': beta,
-            'Baseline': f"{baseline:.2f}",
-            'GA_cost': f"{fitness:.2f}",
-            'Improvement_%': f"{improvement:.2f}",
-            'Path': str(path)
-        })
-    
-    return filename
-
 def compute_exact_travel_cost(
     u: int, 
     v: int, 
@@ -169,8 +110,19 @@ def compute_exact_travel_cost(
     beta: float
 ) -> float:
     """
-    Calcola il costo esatto replicando la logica hop-by-hop del professore.
-    Formula implicita: Sum(dist_i) + (alpha * weight)^beta * Sum(dist_i^beta)
+    Compute the exact travel cost from city u to city v given current weight.
+
+    Args:   
+        u: Starting city index.
+        v: Destination city index.
+        weight: Current weight (gold carried).
+        distances: Precomputed distances dictionary.
+        beta_sums: Precomputed beta sums dictionary.
+        alpha: Problem alpha parameter.
+        beta: Problem beta parameter.
+    
+    Returns:
+        Exact travel cost from u to v.
     """
     dist_total = distances[u][v]
     if weight == 0:
@@ -335,8 +287,74 @@ def evaluate_route(genome: list, graph: nx.Graph, distances: Dict, beta_sums: Di
     else:
         return _evaluate_greedy(genome, graph, distances, beta_sums, alpha, beta)
     
+def save_solution_to_file(path, problem_params, fitness, baseline, filename=None, output_dir=None):
+    """
+    Save solution results to CSV file.
+    
+    Args:
+        path: Solution path (list of cities).
+        problem_params: Dictionary containing problem parameters.
+        fitness: Final GA cost.
+        baseline: Baseline cost.
+        filename: Optional filename (defaults to 'results.csv').
+        output_dir: Optional output directory.
+    
+    Returns:
+        Full path to the saved file.
+    """
+    if filename is None:
+        filename = "results.csv"
+    
+    if output_dir is not None:
+        os.makedirs(output_dir, exist_ok=True)
+        filename = os.path.join(output_dir, filename)
+    
+    # Calculate improvement percentage
+    if baseline > 0:
+        improvement = (baseline - fitness) / baseline * 100
+    else:
+        improvement = 0.0
+    
+    # Extract parameters
+    problem_size = problem_params.get('num_cities', 'N/A')
+    density = problem_params.get('density', 'N/A')
+    alpha = problem_params.get('alpha', 'N/A')
+    beta = problem_params.get('beta', 'N/A')
+    
+    # Check if file exists to determine if we need to write headers
+    file_exists = os.path.isfile(filename)
+    
+    with open(filename, 'a', newline='') as f:
+        fieldnames = ['Problem_size', 'Density', 'Alpha', 'Beta', 'Baseline', 'GA_cost', 'Improvement_%', 'Path']
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        
+        # Write header only if file is new
+        if not file_exists:
+            writer.writeheader()
+        
+        # Write data row
+        writer.writerow({
+            'Problem_size': problem_size,
+            'Density': density,
+            'Alpha': alpha,
+            'Beta': beta,
+            'Baseline': f"{baseline:.2f}",
+            'GA_cost': f"{fitness:.2f}",
+            'Improvement_%': f"{improvement:.2f}",
+            'Path': str(path)
+        })
+    
+    return filename    
+    
 def plot_evolution(history, problem_params, save_path=None):
-    """Plot fitness evolution over generations"""
+    """
+    Plot fitness evolution over generations
+    
+    Args:
+        history: Dictionary with 'best_history' and 'avg_history' lists.
+        problem_params: Dictionary containing problem parameters.
+        save_path: Optional path to save the plot image.
+    """
     plt.figure(figsize=(10, 6))
     
     generations = range(len(history['best_history']))
@@ -351,6 +369,8 @@ def plot_evolution(history, problem_params, save_path=None):
     plt.tight_layout()
     
     if save_path:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         plt.close()
     else:
