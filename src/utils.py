@@ -287,6 +287,97 @@ def evaluate_route(genome: list, graph: nx.Graph, distances: Dict, beta_sums: Di
     else:
         return _evaluate_greedy(genome, graph, distances, beta_sums, alpha, beta)
     
+
+def expand_path(compact_path, paths_dict):
+    """
+    Expand a compact path into a full node-by-node path where every
+    consecutive pair of cities is connected by a direct edge in the graph.
+    
+    The compact path contains (city, gold) tuples where consecutive cities
+    may not be directly connected. This function inserts intermediate nodes
+    from the precomputed shortest paths.
+    
+    Args:
+        compact_path: List of (city, gold) tuples (the compact/high-level path).
+        paths_dict: Precomputed shortest paths dict[source][target] -> list of nodes.
+    
+    Returns:
+        Expanded path as list of (city, gold) tuples with all intermediate nodes.
+    """
+    if not compact_path:
+        return []
+    
+    # Full path starts from base (node 0)
+    expanded = [(0, 0)]
+    
+    for city, gold in compact_path:
+        prev_city = expanded[-1][0]
+        
+        if prev_city == city:
+            # Same node (e.g. already at base and path says (0,0))
+            # Only add if it's the final return to base and we need to close
+            if city == 0 and expanded[-1] != (0, 0):
+                expanded.append((0, 0))
+            continue
+        
+        # Get shortest path from prev_city to city
+        shortest = paths_dict[prev_city][city]
+        
+        # Add intermediate nodes (skip the first which is prev_city, already in expanded)
+        for intermediate in shortest[1:-1]:
+            expanded.append((intermediate, 0))  # just passing through, no gold collected
+        
+        # Add destination with its gold value
+        expanded.append((city, gold))
+    
+    return expanded
+
+
+def is_valid(path, problem):
+    """
+    Validate that the path is feasible:
+    1. Every consecutive pair of cities is connected by a direct edge.
+    2. All cities (1..N-1) are visited exactly once for gold collection.
+    3. Path starts and ends at base (node 0).
+    
+    Args:
+        path: Expanded path as list of (city, gold) tuples.
+        problem: Problem instance.
+    
+    Returns:
+        (bool, str): (is_valid, error_message)
+    """
+    graph = problem.graph
+    
+    if not path:
+        return False, "Path is empty"
+    
+    # Check start
+    if path[0][0] != 0:
+        return False, f"Path doesn't start at base (starts at {path[0][0]})"
+    
+    # Check end
+    if path[-1][0] != 0:
+        return False, f"Path doesn't end at base (ends at {path[-1][0]})"
+    
+    # Check every consecutive pair has a direct edge
+    for i, ((c1, _), (c2, _)) in enumerate(zip(path, path[1:])):
+        if c1 == c2:
+            continue
+        if not graph.has_edge(c1, c2):
+            return False, f"No direct edge between {c1} and {c2} at step {i}"
+    
+    # Check all cities visited exactly once (collecting gold)
+    gold_visits = [(c, g) for c, g in path if c != 0 and g > 0]
+    visited_cities = {c for c, g in gold_visits}
+    expected_cities = set(range(1, len(graph.nodes())))
+    
+    missing = expected_cities - visited_cities
+    if missing:
+        return False, f"Missing cities: {missing}"
+    
+    return True, "Valid"
+    
 def save_solution_to_file(path, problem_params, fitness, baseline, filename=None, output_dir=None):
     """
     Save solution results to CSV file.

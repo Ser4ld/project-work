@@ -7,6 +7,7 @@ import concurrent.futures
 import functools
 
 from .utils import (
+    expand_path,
     precompute_shortest_paths,
     evaluate_route,
     create_random_route,
@@ -202,6 +203,8 @@ class GeneticAlgorithm:
         # Final Polish
         self.best_route = self._local_search(self.best_route)
         self.best_fitness, self.best_path = self._evaluate(self.best_route)
+
+        self.best_path = expand_path(self.best_path, self.paths)
 
         history = {
             'best_history': self.best_fitness_history,
