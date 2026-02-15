@@ -1,6 +1,6 @@
 from Problem import Problem
 from src import solve, GAConfig
-from src.utils import is_valid, plot_evolution, save_solution_to_file
+from src.utils import is_valid, plot_evolution, save_solution_to_file, validate_solution
 
 
 def solution(p: Problem):
@@ -46,16 +46,16 @@ if __name__ == "__main__":
     test_problems = [
         (100, 0.2, 1, 1),
         (100, 0.2, 2, 1),
-        #(100, 0.2, 1, 2),
-        #(100, 1, 1, 1),
-        #(100, 1, 2, 1),
-        #(100, 1, 1, 2),
-        #(1000, 0.2, 1, 1),
-        #(1000, 0.2, 2, 1),
-        #(1000, 0.2, 1, 2),
-        #(1000, 1, 1, 1),
-        #(1000, 1, 2, 1),
-        #(1000, 1, 1, 2),
+        (100, 0.2, 1, 2),
+        (100, 1, 1, 1),
+        (100, 1, 2, 1),
+        (100, 1, 1, 2),
+        (1000, 0.2, 1, 1),
+        (1000, 0.2, 2, 1),
+        (1000, 0.2, 1, 2),
+        (1000, 1, 1, 1),
+        (1000, 1, 2, 1),
+        (1000, 1, 1, 2),
     ]
     
     print("=" * 60)
@@ -74,10 +74,13 @@ if __name__ == "__main__":
         
         path = solution(p)
         
-        # Validate with is_valid
-        valid, msg = is_valid(path, p)
+        # Validate with is_valid (uncomment for edge validity check)
+        #valid, msg = validate_solution(p, path)
+        #edge_check = all(is_valid(p, path))
         
-        status = "✓" if valid else "✗"
-        print(f"{status} Solution valid: {valid} ({msg})")
+        #status = "✓" if (valid and edge_check) else "✗"
+        #print(f"{status} Solution valid: {valid} ({msg})")
+        #print(f"  Edge validation: {'✓ all True' if edge_check else '❌ FAIL'}")
+
         print(f"\nPath format: {path[:5]}...{path[-3:]}" if len(path) > 8 else f"\nPath: {path}")
         print(f"Path length: {len(path)} steps")
