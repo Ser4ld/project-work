@@ -332,17 +332,31 @@ def expand_path(compact_path, paths_dict):
     
     return expanded
 
-
-def is_valid(path, problem):
+def is_valid(problem, path):
     """
-    Validate that the path is feasible:
-    1. Every consecutive pair of cities is connected by a direct edge.
-    2. All cities (1..N-1) are visited exactly once for gold collection.
-    3. Path starts and ends at base (node 0).
+    Professor's validation function (updated).
+    Uses has_edge to check direct connectivity between consecutive cities.
+    This is a generator that yields True/False for each consecutive pair.
     
     Args:
-        path: Expanded path as list of (city, gold) tuples.
         problem: Problem instance.
+        path: Expanded path as list of (city, gold) tuples.
+    
+    Yields:
+        bool: True if edge exists between consecutive cities.
+    """
+    for (c1, gold1), (c2, gold2) in zip(path, path[1:]):
+        yield problem.graph.has_edge(c1, c2)
+
+
+def validate_solution(problem, path):
+    """
+    Extended validation with detailed error reporting.
+    Uses the professor's is_valid internally + additional checks.
+    
+    Args:
+        problem: Problem instance.
+        path: Expanded path as list of (city, gold) tuples.
     
     Returns:
         (bool, str): (is_valid, error_message)
@@ -360,7 +374,7 @@ def is_valid(path, problem):
     if path[-1][0] != 0:
         return False, f"Path doesn't end at base (ends at {path[-1][0]})"
     
-    # Check every consecutive pair has a direct edge
+    # Check every consecutive pair using professor's has_edge logic
     for i, ((c1, _), (c2, _)) in enumerate(zip(path, path[1:])):
         if c1 == c2:
             continue
@@ -375,6 +389,16 @@ def is_valid(path, problem):
     missing = expected_cities - visited_cities
     if missing:
         return False, f"Missing cities: {missing}"
+    
+    # Run professor's is_valid as final check
+    prof_results = list(is_valid(problem, path))
+    failed_steps = [i for i, ok in enumerate(prof_results) if not ok]
+    if failed_steps:
+        # Show first failing step details
+        step = failed_steps[0]
+        c1, g1 = path[step]
+        c2, g2 = path[step + 1]
+        return False, f"Professor's is_valid fails at step {step}: ({c1},{g1:.1f})->({c2},{g2:.1f})"
     
     return True, "Valid"
     
